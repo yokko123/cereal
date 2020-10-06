@@ -4,9 +4,12 @@
 #include <cstdlib>
 #include <csignal>
 #include <cerrno>
+#include <map>
 
 
 #include "impl_msgq.hpp"
+
+std::map<char*, std::string> mems;
 
 volatile sig_atomic_t msgq_do_exit = 0;
 
@@ -53,6 +56,7 @@ void MSGQMessage::takeOwnership(char * d, size_t sz) {
 void MSGQMessage::close() {
   if (size > 0){
     delete[] data;
+    mems.erase(data);
   }
   size = 0;
 }
@@ -133,6 +137,12 @@ Message * MSGQSubSocket::receive(bool non_blocking){
     } else {
       r = new MSGQMessage;
       r->takeOwnership(msg.data, msg.size);
+
+      for (auto it = mems.begin(); it != mems.end(); it++ ) {
+        std::cout << (void*)it->first << ':' << it->second << std::endl;
+      }
+
+      mems[msg.data] = q->endpoint;
     }
   }
 
